@@ -1,0 +1,19 @@
+{
+  "mongo": {
+    "uri": "mongodb://localhost/template"
+  },
+  "basepaths": {
+    "serverUrl": "localhost:3001",
+    "clientUrl": "localhost:3000"
+  },
+  "smtpConfig": {
+    "port": "1025",
+    "ignoreTLS": true,
+    "debug": true
+  },
+  "cors": {
+    "origins": [
+      "localhost:3000$"
+    ]
+  }
+}

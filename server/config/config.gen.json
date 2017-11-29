@@ -1,0 +1,51 @@
+{
+  "mongo": {
+    "autoIndex": true,
+    "options": {
+      "autoReconnect": true,
+      "useMongoClient": true
+    }
+  },
+  "basepaths": {
+    "avatars": "assets/images/avatar",
+    "designs": "assets/images/designs",
+    "newsfeed": "assets/images/newsfeed",
+    "reviews": "assets/images/reviews"
+  },
+  "cors": {
+    "exposedHeaders": [
+      "X-Total-Count"
+    ]
+  },
+  "jwt": {
+    "activation": {
+      "expiresIn": "1h",
+      "issuer": "template:activation",
+      "secret": ">PQo6b3^9gMH8MJcw%Pv:H9D"
+    },
+    "auth": {
+      "expiresIn": "1h",
+      "issuer": "template:auth",
+      "secret": ">PQo6b3^9gMH8MJcw%Pv:H9D"
+    }
+  },
+  "security": {
+    "superPwd": "SpecialRootSecurityPwd007.2017!"
+  },
+  "validationConfig": {
+    "usernameMinLength": 4,
+    "usernameMaxLength": 15,
+    "reservedUsernames": [
+      "admin",
+      "super",
+      "root",
+      "jens",
+      "souf"
+    ],
+    "dateTimePrefs": [
+      "dd/mm/yyyy",
+      "mm/dd/yyyy",
+      "yyyy/mm/dd"
+    ]
+  }
+}
