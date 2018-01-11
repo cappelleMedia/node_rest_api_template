@@ -1,136 +1,122 @@
-/**
- * Created by Jens on 12-Oct-16.
- */
-"use strict"
-const async = require('async');
+"use strict";
+const async = require('async'),
+	BaseController = require('../../util/bases/basecontroller'),
+	Model = require('./model'),
+	Mailer = require('../../util/mailing/mailer'),
+	config = require('../../config/index'),
+	Authenticator = require('../../users/user/authenticator');
 
-const BaseController = require('../../util/bases/basecontroller');
-const Model = require('./model');
-const Mailer = require('../../util/mailing/mailer');
-const config = require('../../config/index');
-
-
-//TODO null and empty checks
-//TODO OVERRIDE UPDATE FUNCTION WITH PW FOR VERIFICATION
+//TODO OVERRIDE UPDATE FUNCTION WITH JWT FOR VERIFICATION
 class UserController extends BaseController {
 	constructor(model = Model) {
 		super(model);
 		this.mailer = new Mailer();
 	}
 
-	registerUser(data, callback) {
-		let self = this;
-		async.waterfall([
-			function (next) {
-				let newUser = null;
-				data.accessFlag = -999;
-				newUser = new Model(data);
-				newUser.save(function (err) {
-					if (err) {
-						next(err, 400);
+	async registerUser(data) {
+		let mailOpts = {
+				message: {
+					from: 'info@template.be',
+					to: 'jens@codious.io',
+					subject: 'Template activation'
+				},
+				locals: {
+					activationUrl: ''
+				}
+			},
+			newUser,
+			errRes = null;
+
+		data.accessFlag = -999;
+		newUser = new Model(data);
+		try {
+			await newUser.save();
+			mailOpts.locals.activationUrl = config.basepaths.clientUrl + '/pre-activation/' + newUser._id + '/' + newUser.regKey;
+			const mailResult = await this.mailer.sendFromTemplate('activation', mailOpts);
+
+			if (mailResult) {
+				errRes = mailResult;
+			}
+
+			return {
+				err: errRes,
+				response: newUser,
+				errors: null
+			}
+
+		} catch (err) {
+			errRes = err;
+		}
+		return {
+			err: errRes,
+			response: newUser,
+			errors: this.handleValidationErrors(errRes)
+		}
+	}
+
+	async activate(data) {
+		let errors = {},
+			err = null,
+			status = 401;
+
+		if (data._id && data.regKey && data.password && data.passwordRepeat) {
+			try {
+				let user = await this.model
+					.findById(data._id)
+					.select('+regKey')
+					.exec();
+
+				if (user) {
+					if (user.accessFlag > 0 || user.regKey !== data.regKey) {
+						errors = null;
+					} else if (data.password !== data.passwordRepeat) {
+						errors['dev'] = 'Password and password repeat did not match';
 					} else {
-						next(null, newUser);
+						user.accessFlag = 1;
+						user.password = data.password;
+						status = user;
+						await this.addObj(user);
 					}
-				});
-			},
-			function (user, done) {
-				let activationUrl = config.basepaths.clientUrl + '/pre-activation/' + user._id + '/' + user.regKey;
-				let mailOpts = {
-					message: {
-						from: 'info@template.be',
-						to: 'jens@codious.io',
-						subject: 'Template activation'
-					},
-					locals: {
-						activationUrl: activationUrl
-					}
-				};
-				self.mailer.sendFromTemplate('activation', mailOpts, function (err) {
-					done(err, user);
-				});
-			}
-
-		], function (err, user) {
-			let errors = null;
-			if (err) {
-				if (err.name === "ValidationError") {
-					errors = self.handleValidationErrors(err);
 				}
-				Model.findByIdAndRemove(user._id).exec(function (err) {
-				});
+			} catch (error) {
+				console.log(error);
+				err = error;
+				status = 500;
 			}
-			callback(err, user, errors);
-		});
+		} else {
+			errors['dev'] = 'Request was missing important information';
+			status = 400;
+		}
+
+		return {
+			err: err,
+			errors: errors,
+			response: status
+		};
 	}
 
-	activate(data, callback) {
-		let self = this;
-		let errors = {};
-		let status = 500;
-		async.waterfall([
-			function (next) {
-				if (!data._id || !data.regKey || !data.password || !data.passwordRepeat) {
-					errors['dev'] = 'Request was missing important information';
-					status = 400;
-					return next(status);
-				} else {
-					self.model
-						.findById(data._id)
-						.select('+regKey')
-						.exec(function (err, obj) {
-							next(err, obj);
-						});
-				}
-			},
-			function (user, next) {
-				if (user.accessFlag > 0) {
-					//Already activated
-					status = 401;
-					errors = null
-					return next(status);
-				}
-				if ((user.regKey !== data.regKey)) {
-					//hide the error here
-					status = 401;
-					errors = null;
-					return next(status);
-				}
-				if (data.password !== data.passwordRepeat) {
-					status = 400;
-					errors['dev'] = 'Password and password repeat did not match';
-					return next(status);
-				}
-				user.accessFlag = 1;
-				user.password = data.password;
-				next(null, user);
-			},
-			function (updatedUser, done) {
-				self.updateObj(updatedUser._id, updatedUser, function (err, user, validationErrors) {
-					errors = validationErrors;
-					status = user.toTokenData();
-					done(err)
-				});
-			}
-
-		], function (err) {
-			callback(err, status, errors);
-		});
+	async getUserByName(username) {
+		let err, user;
+		try {
+			user = await this.model
+				.findOne({username: new RegExp('^' + username + '$', 'i')})
+				.exec();
+		} catch (error) {
+			err = error;
+		}
+		return BaseController.getResult(err, user);
 	}
 
-	getUserByName(username, callback) {
-		this.model
-			.findOne({username: new RegExp('^' + username + '$', 'i')})
-			.exec(function (err, user) {
-				BaseController.getResult(err, user, callback);
-			});
-	}
-
-	getUserByEmail(email, callback) {
-		this.model
-			.findOne({email: new RegExp('^' + email + '$', 'i')})
-			.exec(function (err, user) {
-				BaseController.getResult(err, user, callback);
-			});
+	async getUserByEmail(email) {
+		let err, user;
+		try {
+			user = await this.model
+				.findOne({email: new RegExp('^' + email + '$', 'i')})
+				.exec();
+		} catch (error) {
+			err = error;
+		}
+		return BaseController.getResult(err, user);
 	}
 
 	handleValidationErrors(err) {
@@ -153,27 +139,51 @@ class UserController extends BaseController {
 
 	//SECURITY AND ACCOUNT
 	authenticate(identifier, pwd, callback) {
-		this.authenticator.authenticate(identifier, pwd, function (err, result) {
+		Authenticator.authenticate(identifier, pwd, function (err, result) {
 			BaseController.getResult(err, result, callback);
 		});
 	}
 
+	updateObj(id, type, updated, adminToken, callback) {
+		const self = this;
+		this.getOne(id, function (err, found) {
+			if (!isNaN(found)) {
+				callback(err, found);
+			} else {
+				Object.assign(found, updated);
+				self.addObj(found, function (err, result) {
+					let errors = null;
+					if (err) {
+						if (err.name === "ValidationError") {
+							errors = self.handleValidationErrors(err);
+						}
+					}
+					callback(err, result, errors);
+				});
+			}
+		});
+	}
+
+	resetPassword() {
+	}
+
 	//FIXME THIS IS FOR TESTING ONLY, BEWARE
-	getAdminToken(callback) {
-		let self = this;
-		if (process.env.NODE_ENV !== 'production') {
-			this.getUserByName('devAdmin', function (err, admin) {
-				if (err || !isNaN(admin)) {
-					BaseController.getResult(err, admin, callback);
-				} else {
-					self.authenticator.getAdminToken(admin, function (err, result) {
-						BaseController.getResult(err, result, callback);
-					});
-				}
-			});
-		} else {
-			return callback(null, 401);
+	async getAdminToken() {
+		let result = {
+			err: null,
+			response: 401
+		};
+
+		try {
+			const admin = await this.getUserByName('devAdmin');
+			if (isNaN(admin)) {
+				result = await Authenticator.getAdminToken(admin.response);
+			}
+		} catch (err) {
+			result.err = err;
 		}
+		console.log('hello');
+		return result;
 	}
 }
 

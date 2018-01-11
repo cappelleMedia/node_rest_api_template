@@ -31,15 +31,14 @@ class Mailer {
 		});
 	}
 
-	sendEmail(mailOpt, callback) {
-		this.transporter.sendMail(mailOpt, function (err, inf) {
-			callback(err);
-		});
-	}
+	// sendEmail(mailOpt, callback) {
+	// 	this.transporter.sendMail(mailOpt, function (err, inf) {
+	// 		callback(err);
+	// 	});
+	// }
 
-	sendFromTemplate(type, mailOpt, callback) {
-		let self = this,
-			extraOptions = {
+	async sendFromTemplate(type, mailOpt) {
+			let extraOptions = {
 				"send": true,
 				"transport": this.transporter,
 				"views": {
@@ -56,13 +55,12 @@ class Mailer {
 			let mailOptMerge = Object.assign(mailOpt, extraOptions, {template: templateDir});
 			let template = new Email(mailOptMerge);
 			template.send(mailOptMerge).then((info) => {
-				winston.info(info);
-				callback(null);
+				return null;
 			}).catch((e) => {
-				callback(e)
+				return e;
 			});
 		} else {
-			callback(new Error('no Template dir found'));
+			return new Error('no Template dir found');
 		}
 	}
 

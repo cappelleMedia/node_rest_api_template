@@ -33,6 +33,7 @@
     "superPwd": "SpecialRootSecurityPwd007.2017!"
   },
   "validationConfig": {
+    "adminMinAccessFlag": 991,
     "usernameMinLength": 4,
     "usernameMaxLength": 15,
     "reservedUsernames": [

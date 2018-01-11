@@ -1,8 +1,4 @@
-/**
- * Created by Jens on 27-Oct-16.
- */
-const MailDev = require('maildev');
-let mailDev = new MailDev();
+const mailDev = new require('maildev')();
 module.exports = function () {
-    mailDev.listen();
+	mailDev.listen();
 };

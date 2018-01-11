@@ -8,7 +8,7 @@ const path = require('path');
 const cors = require('cors');
 const winston = require('winston');
 
-const config = require('./config');
+const config = require('../../config/index');
 
 class ConnectionHandler {
 	constructor() {
@@ -51,7 +51,7 @@ class ConnectionHandler {
 	}
 
 	mailSetup() {
-		let mailListener = require('./dev/mail/mailTesting')();
+		let mailListener = require('../../dev/mail/mailTesting')();
 		winston.info('Mail dev server setup');
 		return mailListener;
 	}

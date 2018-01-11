@@ -1,58 +1,50 @@
-/**
- * Created by Jens on 12-Oct-16.
- */
-const winston = require('winston');
-
-const Controller = require('./controller');
-const helper = require('../../util/routerHelper');
+const Controller = require('./controller'),
+	helper = require('../../util/helpers/routerHelper');
 
 module.exports = function (app, base) {
-    let controller = new Controller();
+	const controller = new Controller();
 
-    //BASE ROUTE OVERRIDES AND ADDONS
-    app.post(base, function (req, res) {
-        controller.registerUser(req.body, function (err, response, validationResult) {
-            helper.respond(err, response, res, validationResult);
-        })
-    });
-    app.get(base + '/username/:username', function (req, res) {
-        controller.getUserByName(req.params.username, function (err, response) {
-            helper.respond(err, response, res);
-        });
-    });
-    app.get(base + '/email/:email', function (req, res) {
-        controller.getUserByEmail(req.params.email, function (err, response) {
-            helper.respond(err, response, res);
-        });
-    });
-    app.put(base + '/activate', function (req, res) {
-        controller.activate(req.body, function (err, response, errors) {
-            helper.respond(err, response, res, errors);
-        })
-    });
-    app.post(base + '/authenticate', function (req, res) {
-        controller.authenticate(req.identifier, req.pwd, function (err, response) {
-            helper.respond(err, response, res);
-        });
-    });
+	//BASE ROUTE OVERRIDES AND ADDONS
+	app.post(base, async (req, res) => {
+		const result = await controller.registerUser(req.body);
+		helper.respond(result.err, result.response, res, result.errors);
+	});
 
-    app.post(base + '/verifyAdmin', function (req, res) {
-        controller.verifyAdmin(req.body.token, function (err, response) {
-            helper.respond(err, response, res);
-        });
-    });
+	app.put(base + '/activate', async (req, res) => {
+		const result = await controller.activate(req.body);
+		helper.respond(result.err, result.response, res, result.errors);
+	});
 
-    //TODO passwordUpdate (check regkey + new passwords)
-    //TODO passwordReset (mail)
+	app.get(base + '/username/:username', async (req, res) => {
+		const result = await controller.getUserByName(req.params.username, res);
+		helper.respond(result.err, result.response, res);
+	});
 
-    //BASE ROUTES
-    require('../../util/bases/baserouter')(app, base, controller);
+	app.get(base + '/email/:email', async (req, res) => {
+		const result = await controller.getUserByEmail(req.params.email);
+		helper.respond(result.err, result.response, res);
+	});
+
+	app.post(base + '/authenticate', (req, res) => {
+		controller.authenticate(req.identifier, req.pwd, function (err, response) {
+			helper.respond(err, response, res);
+		});
+	});
+
+	app.post(base + '/verifyAdmin', async (req, res) => {
+		const result = await controller.verifyAdmin(req.body.token);
+		helper.respond(result.err, result.response, res);
+	});
+
+	//TODO passwordReset (mail)
+
+	//BASE ROUTES
+	require('../../util/bases/baserouter')(app, base, controller);
 
 
-    //FIXME THIS IS FOR TESTING ONLY, BEWARE
-    app.get(base + '/dev/adminToken', function (req, res) {
-        controller.getAdminToken(function (err, response) {
-            helper.respond(err, response, res);
-        })
-    });
+	//FIXME THIS IS FOR TESTING ONLY, BEWARE
+	app.get(base + '/dev/adminToken', async (req, res) => {
+		const result = await controller.getAdminToken();
+		helper.respond(result.err, result.response, res);
+	});
 };

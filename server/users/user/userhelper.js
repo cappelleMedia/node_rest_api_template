@@ -1,104 +1,95 @@
-/**
- * Created by Jens on 11-Oct-16.
- */
-const pwdChecker = require('zxcvbn');
-const bcrypt = require('bcrypt-nodejs');
-const crypto = require('crypto');
-const masterValidator = require('validator');
-
-const config = require('../../config');
-
-let chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-let validationConfig = config.validationConfig;
+const pwdChecker = require('zxcvbn'),
+	bcrypt = require('bcrypt-nodejs'),
+	crypto = require('crypto'),
+	masterValidator = require('validator'),
+	config = require('../../config'),
+	chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+	validationConfig = config.validationConfig;
 
 class UserHelper {
 
-    constructor() {
-    }
+	constructor() {
+	}
 
-    getPasswordValidators() {
-        let validators = [
-            {
-                validator: this.isValidPassword,
-                msg: 'Password is not strong enough'
-            }
-        ];
-        return validators;
-    }
+	getPasswordValidators() {
+		return [
+			{
+				validator: this.isValidPassword,
+				msg: 'Password is not strong enough'
+			}
+		];
+	}
 
-    getUsernameValidators() {
-        let validators = [
-            {
-                validator: this.usernameLengthValidator,
-                msg: 'Username length should be between ' + validationConfig.usernameMinLength + ' and ' + validationConfig.usernameMaxLength
-            },
-            {
-                validator: this.isUsernameAllowed,
-                msg: 'This username is reserved'
-            }
-        ];
-        return validators;
-    }
+	getUsernameValidators() {
+		return [
+			{
+				validator: this.usernameLengthValidator,
+				msg: 'Username length should be between ' + validationConfig.usernameMinLength + ' and ' + validationConfig.usernameMaxLength
+			},
+			{
+				validator: this.isUsernameAllowed,
+				msg: 'This username is reserved'
+			}
+		];
+	}
 
-    getEmailValidators() {
-        let validators = [
-            {
-                validator: this.isEmailValidator,
-                msg: 'This is not a valid email address'
-            }
-        ];
-        return validators;
-    }
+	getEmailValidators() {
+		return [
+			{
+				validator: this.isEmailValidator,
+				msg: 'This is not a valid email address'
+			}
+		];
+	}
 
-    getDateTimeValidators() {
-        let validators = [
-            {
-                validator: this.isValidDateFormat,
-                msg: 'This is not a valid date format'
-            }
-        ];
-        return validators;
-    }
+	getDateTimeValidators() {
+		return [
+			{
+				validator: this.isValidDateFormat,
+				msg: 'This is not a valid date format'
+			}
+		];
+	}
 
-    //PASSWORD VALIDATION RULES
-    isValidPassword(password) {
-        return (pwdChecker(password).score >= 3);
-    }
+	//PASSWORD VALIDATION RULES
+	isValidPassword(password) {
+		return (pwdChecker(password).score >= 3);
+	}
 
-    //USERNAME VALIDATION RULES
-    usernameLengthValidator(username) {
-        return masterValidator.isLength(username, {
-            min: validationConfig.usernameMinLength,
-            max: validationConfig.usernameMaxLength
-        });
-    }
+	//USERNAME VALIDATION RULES
+	usernameLengthValidator(username) {
+		return masterValidator.isLength(username, {
+			min: validationConfig.usernameMinLength,
+			max: validationConfig.usernameMaxLength
+		});
+	}
 
-    isUsernameAllowed(username) {
-        return !masterValidator.isIn(username, validationConfig.reservedUsernames);
-    }
+	isUsernameAllowed(username) {
+		return !masterValidator.isIn(username, validationConfig.reservedUsernames);
+	}
 
-    //EMAIL VALIDATORS
-    isEmailValidator(email) {
-        return masterValidator.isEmail(email);
-    }
+	//EMAIL VALIDATORS
+	isEmailValidator(email) {
+		return masterValidator.isEmail(email);
+	}
 
-    //DATE VALIDATORS
-    isValidDateFormat(dateFormat) {
-        return masterValidator.isIn(dateFormat, validationConfig.dateTimePrefs);
-    }
+	//DATE VALIDATORS
+	isValidDateFormat(dateFormat) {
+		return masterValidator.isIn(dateFormat, validationConfig.dateTimePrefs);
+	}
 
-    encryptPwd(password) {
-        let pwdEnc = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
-        return pwdEnc;
-    }
+	encryptPwd(password) {
+		const pwdEnc = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
+		return pwdEnc;
+	}
 
-    generateRegKey(length) {
-        let bytes = crypto.randomBytes(length);
-        let result = new Array(length);
-        for (let i = 0, j = length; i < j; i++)
-            result[i] = chars[bytes[i] % chars.length];
-        return result.join('');
-    }
-
+	generateRegKey(length) {
+		const bytes = crypto.randomBytes(length);
+		let result = new Array(length);
+		for (let i = 0, j = length; i < j; i++)
+			result[i] = chars[bytes[i] % chars.length];
+		return result.join('');
+	}
 }
+
 module.exports = UserHelper;

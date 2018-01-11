@@ -8,8 +8,7 @@
   },
   "smtpConfig": {
     "port": "1025",
-    "ignoreTLS": true,
-    "debug": true
+    "ignoreTLS": true
   },
   "cors": {
     "origins": [

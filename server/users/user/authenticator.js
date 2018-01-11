@@ -1,46 +1,52 @@
-/**
- * Created by Jens on 18-Nov-16.
- */
-const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken'),
+	winston = require('winston'),
+	config = require('../../config'),
+	jwtConfig = config.jwt.auth;
 
-const Model = require('./model');
-const config = require('../../config');
-const jwtConfig = config.jwt.auth;
 class Authenticator {
-    constructor() {
-        //should never be called
-    }
+	constructor() {
+		//should never be called
+	}
 
-    //TODO THIS IS FOR TESTING ONLY, BEWARE
-    static getAdminToken(admin, callback) {
-        console.log(admin.toTokenData());
-        if (process.env.NODE_ENV !== 'production') {
-            jwt.sign(admin.toTokenData(), jwtConfig.secret, {issuer: jwtConfig.issuer}, function (err, token) {
-                return callback(err, token);
-            });
-        } else {
-            return callback(null, 401);
-        }
-    }
+	//TODO THIS IS FOR TESTING ONLY, BEWARE
+	static async getAdminToken(admin) {
+		// console.log(admin.toTokenData());
+		winston.info('Admin tokenData generated');
+		let result = {
+			err: null,
+			response: 401
+		};
+		try {
+			result.response = jwt.sign(admin.toTokenData(), jwtConfig.secret, {issuer: jwtConfig.issuer});
+		} catch (err) {
+			result.err = err;
+		}
+		return result;
+	}
 
-    static authenticate(identifier, pwd, callback) {
-        //TODO IMPLEMENT
-        return callback(null, 501);
-    }
+	static authenticate(user, pwd) {
+		//TODO IMPLEMENT
+		return callback(null, 501);
+	}
 
-    static verifyAdmin(token, callback) {
-        jwt.verify(token, jwtConfig.secret, {issuer: jwtConfig.issuer}, function (err, data) {
-            if (err || !data) {
-                return callback(err, 401);
-            } else {
-                if (data.accessFlag > 990) {
-                    return callback(null, "verified");
-                } else {
-                    return callback(err, 401);
-                }
-            }
-        });
-    }
+	static async verifyAdmin(token) {
+		let jwtResult = null,
+			result = {
+				err: null,
+				response: null
+			};
+		try {
+			jwtResult = await jwt.verify(token, jwtConfig.secret, {issuer: jwtConfig.issuer});
+		} catch (error) {
+			result.err = error;
+		}
+		if (result.err || !jwtResult || jwtResult.accessFlag <= config.validationConfig.adminMinAccessFlag) {
+			result.response = 401;
+		} else {
+			result.response = "verified";
+		}
+		return result;
+	}
 }
 
 module.exports = Authenticator;
