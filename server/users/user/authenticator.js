@@ -25,8 +25,19 @@ class Authenticator {
 	}
 
 	static authenticate(user, pwd) {
-		//TODO IMPLEMENT
-		return callback(null, 501);
+		let result = {
+			err: null,
+			response: 401
+		};
+
+		if (user.password === pwd) {
+			try {
+				result.response = jwt.sign(user.toTokenData(), jwtConfig.secret, {issuer: jwtConfig.issuer})
+			} catch (err) {
+				result.err = err;
+			}
+		}
+		return result;
 	}
 
 	static async verifyAdmin(token) {

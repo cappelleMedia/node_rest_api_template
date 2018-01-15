@@ -7,11 +7,8 @@ const pwdChecker = require('zxcvbn'),
 	validationConfig = config.validationConfig;
 
 class UserHelper {
-
-	constructor() {
-	}
-
-	getPasswordValidators() {
+	
+	static getPasswordValidators() {
 		return [
 			{
 				validator: this.isValidPassword,
@@ -20,7 +17,7 @@ class UserHelper {
 		];
 	}
 
-	getUsernameValidators() {
+	static getUsernameValidators() {
 		return [
 			{
 				validator: this.usernameLengthValidator,
@@ -33,7 +30,7 @@ class UserHelper {
 		];
 	}
 
-	getEmailValidators() {
+	static getEmailValidators() {
 		return [
 			{
 				validator: this.isEmailValidator,
@@ -42,7 +39,7 @@ class UserHelper {
 		];
 	}
 
-	getDateTimeValidators() {
+	static getDateTimeValidators() {
 		return [
 			{
 				validator: this.isValidDateFormat,
@@ -52,38 +49,38 @@ class UserHelper {
 	}
 
 	//PASSWORD VALIDATION RULES
-	isValidPassword(password) {
+	static isValidPassword(password) {
 		return (pwdChecker(password).score >= 3);
 	}
 
 	//USERNAME VALIDATION RULES
-	usernameLengthValidator(username) {
+	static usernameLengthValidator(username) {
 		return masterValidator.isLength(username, {
 			min: validationConfig.usernameMinLength,
 			max: validationConfig.usernameMaxLength
 		});
 	}
 
-	isUsernameAllowed(username) {
+	static isUsernameAllowed(username) {
 		return !masterValidator.isIn(username, validationConfig.reservedUsernames);
 	}
 
 	//EMAIL VALIDATORS
-	isEmailValidator(email) {
+	static isEmailValidator(email) {
 		return masterValidator.isEmail(email);
 	}
 
 	//DATE VALIDATORS
-	isValidDateFormat(dateFormat) {
+	static isValidDateFormat(dateFormat) {
 		return masterValidator.isIn(dateFormat, validationConfig.dateTimePrefs);
 	}
 
-	encryptPwd(password) {
+	static encryptPwd(password) {
 		const pwdEnc = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
 		return pwdEnc;
 	}
 
-	generateRegKey(length) {
+	static generateRegKey(length) {
 		const bytes = crypto.randomBytes(length);
 		let result = new Array(length);
 		for (let i = 0, j = length; i < j; i++)

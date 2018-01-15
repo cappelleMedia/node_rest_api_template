@@ -4,7 +4,9 @@ const async = require('async'),
 	Model = require('./model'),
 	Mailer = require('../../util/mailing/mailer'),
 	config = require('../../config/index'),
-	Authenticator = require('../../users/user/authenticator');
+	Authenticator = require('./authenticator'),
+	UserHelper = require('./UserHelper');
+
 
 //TODO OVERRIDE UPDATE FUNCTION WITH JWT FOR VERIFICATION
 class UserController extends BaseController {
@@ -95,24 +97,32 @@ class UserController extends BaseController {
 		};
 	}
 
-	async getUserByName(username) {
-		let err, user;
+	async getUserByName(username, extraField) {
+		let err, query, user;
 		try {
-			user = await this.model
-				.findOne({username: new RegExp('^' + username + '$', 'i')})
-				.exec();
+			query = this.model
+				.findOne({username: new RegExp('^' + username + '$', 'i')});
+
+			if(extraField){
+				query.select('+' + extraField);
+			}
+
+			user = await query.exec();
 		} catch (error) {
 			err = error;
 		}
 		return BaseController.getResult(err, user);
 	}
 
-	async getUserByEmail(email) {
-		let err, user;
+	async getUserByEmail(email, extraField) {
+		let err, query, user;
 		try {
-			user = await this.model
-				.findOne({email: new RegExp('^' + email + '$', 'i')})
-				.exec();
+			query = this.model
+				.findOne({email: new RegExp('^' + email + '$', 'i')});
+			if(extraField){
+
+			}
+			user = await query.exec();
 		} catch (error) {
 			err = error;
 		}
@@ -138,11 +148,29 @@ class UserController extends BaseController {
 	}
 
 	//SECURITY AND ACCOUNT
-	authenticate(identifier, pwd, callback) {
-		Authenticator.authenticate(identifier, pwd, function (err, result) {
-			BaseController.getResult(err, result, callback);
-		});
+	async authenticate(identifier, pwd) {
+		let user,
+			result = 401,
+			err = null;
+		try {
+			if (UserHelper.isEmailValidator(identifier)) {
+				user = await this.getUserByEmail(identifier, 'password');
+			} else {
+				user = await this.getUserByName(identifier, 'password');
+			}
+
+			if (!user.err && isNaN(user.response)) {
+				result = await Authenticator.authenticate(user.response, UserHelper.encryptPwd(pwd));
+			} else {
+				err = user.err;
+				result = user.response;
+			}
+		} catch (error) {
+			err = error;
+		}
+		return BaseController.getResult(err, result);
 	}
+
 
 	updateObj(id, type, updated, adminToken, callback) {
 		const self = this;

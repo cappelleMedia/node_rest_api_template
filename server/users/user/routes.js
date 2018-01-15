@@ -16,7 +16,7 @@ module.exports = function (app, base) {
 	});
 
 	app.get(base + '/username/:username', async (req, res) => {
-		const result = await controller.getUserByName(req.params.username, res);
+		const result = await controller.getUserByName(req.params.username);
 		helper.respond(result.err, result.response, res);
 	});
 
@@ -25,10 +25,10 @@ module.exports = function (app, base) {
 		helper.respond(result.err, result.response, res);
 	});
 
-	app.post(base + '/authenticate', (req, res) => {
-		controller.authenticate(req.identifier, req.pwd, function (err, response) {
-			helper.respond(err, response, res);
-		});
+	app.post(base + '/authenticate', async (req, res) => {
+		const result = await controller.authenticate(req.body.identifier, req.body.pwd);
+			helper.respond(result.err, result.response, res);
+
 	});
 
 	app.post(base + '/verifyAdmin', async (req, res) => {

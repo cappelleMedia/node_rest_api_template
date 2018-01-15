@@ -1,8 +1,7 @@
 const mongoose = require('mongoose'),
 	uniqueValidation = require('mongoose-beautiful-unique-validation'),
 	config = require('../../config/index'),
-	UserHelp = require('./userhelper'),
-	userHelp = new UserHelp();
+	UserHelp = require('./UserHelper');
 
 //MAIN
 const UserSchema = new mongoose.Schema({
@@ -14,7 +13,7 @@ const UserSchema = new mongoose.Schema({
 		required: true,
 		index: true,
 		unique: 'This username is already taken',
-		validate: userHelp.getUsernameValidators()
+		validate: UserHelp.getUsernameValidators()
 	},
 	email: {
 		type: String,
@@ -22,14 +21,14 @@ const UserSchema = new mongoose.Schema({
 		index: true,
 		lowercase: true,
 		unique: 'This email is already in use',
-		validate: userHelp.getEmailValidators()
+		validate: UserHelp.getEmailValidators()
 	},
 	password: {
 		type: String,
 		required: true,
 		select: false,
-		default: userHelp.generateRegKey(64),
-		validate: userHelp.getPasswordValidators()
+		default: UserHelp.generateRegKey(64),
+		validate: UserHelp.getPasswordValidators()
 	},
 	regKey: {
 		type: String,
@@ -37,12 +36,12 @@ const UserSchema = new mongoose.Schema({
 		select: false,
 		min: 64,
 		max: 64,
-		default: userHelp.generateRegKey(64)
+		default: UserHelp.generateRegKey(64)
 	},
 	dateTimePref: {
 		type: String,
 		required: true,
-		validate: userHelp.getDateTimeValidators()
+		validate: UserHelp.getDateTimeValidators()
 	},
 	creation: {
 		type: Date,
@@ -94,9 +93,9 @@ UserSchema.methods.toTokenData = function () {
 // PRE'S
 UserSchema.post('validate', function () {
 	if (this.isModified('password')) {
-		this.password = userHelp.encryptPwd(this.password);
+		this.password = UserHelp.encryptPwd(this.password);
 	}
-	this.regKey = userHelp.generateRegKey(64);
+	this.regKey = UserHelp.generateRegKey(64);
 });
 
 //EXPORTS

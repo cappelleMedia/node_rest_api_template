@@ -31,12 +31,6 @@ class Mailer {
 		});
 	}
 
-	// sendEmail(mailOpt, callback) {
-	// 	this.transporter.sendMail(mailOpt, function (err, inf) {
-	// 		callback(err);
-	// 	});
-	// }
-
 	async sendFromTemplate(type, mailOpt) {
 			let extraOptions = {
 				"send": true,
